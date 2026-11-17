@@ -61,3 +61,24 @@ The returned PDF URL is relative to the API host. Prefix it with your configured
 
 ## Note
 Spring Boot's `ddl-auto=update` creates `experience_sends` and updates entity tables. `employee_master` is also mapped as an entity; create it with the supplied SQL before first run.
+
+
+## Live deployment lookup fix / verification
+
+The `/api/employee/{employeeId}` endpoint now matches `employee_master.employee_id`
+case-insensitively and ignores accidental surrounding spaces. It also searches
+`experience_sends` case-insensitively (latest record first). The frontend sends
+the ID as uppercase.
+
+**Important:** this application does not automatically read the old Supabase or
+any other legacy database. Render must point to the MySQL database containing
+the migrated employee/history rows. Run the two verification SELECT statements
+in `database/schema.sql` against the exact database used by the deployed backend.
+If both return zero rows, migrate the actual employee details into `employee_master`
+using the INSERT template in that file. Do not use the sample values.
+
+Set these Render environment variables: `SPRING_DATASOURCE_URL`,
+`SPRING_DATASOURCE_USERNAME`, and `SPRING_DATASOURCE_PASSWORD`. For email, set
+`MAIL_USERNAME`, `MAIL_PASSWORD`, and optionally `MAIL_FROM`. Credentials have
+been removed from the source defaults; rotate any database or SMTP credentials
+that were previously committed in source files or shared archives.

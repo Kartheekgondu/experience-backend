@@ -100,7 +100,7 @@ public class ExperienceLetterController {
 
         // Read both sources. employee_master may contain an older/incomplete row,
         // while experience_sends stores the details used for previous letters.
-        Optional<Employee> master = employees.findById(id);
+        Optional<Employee> master = employees.findByNormalizedEmployeeId(id);
         List<ExperienceSend> previousLetters = history.findLatestMatchingEmployeeId(id);
         ExperienceSend latest = previousLetters.isEmpty() ? null : previousLetters.get(0);
 
