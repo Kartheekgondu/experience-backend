@@ -1,11 +1,20 @@
-Set these in Render > Environment (never commit real values):
+Render > Environment (set values in the Render dashboard; never commit passwords):
 
-SPRING_DATASOURCE_URL      = jdbc:mysql://<aiven-host>:11124/defaultdb?sslMode=REQUIRED
-SPRING_DATASOURCE_USERNAME = avnadmin
-SPRING_DATASOURCE_PASSWORD = <new Aiven password>
-MAIL_USERNAME              = <gmail address>
-MAIL_PASSWORD              = <new gmail app password>
+SPRING_DATASOURCE_URL      = jdbc:mysql://<aiven-host>:<port>/<database>?sslMode=REQUIRED
+SPRING_DATASOURCE_USERNAME = <database username>
+SPRING_DATASOURCE_PASSWORD = <database password>
+MAIL_USERNAME              = <sender email> (optional; needed only for email)
+MAIL_PASSWORD              = <new email app password> (optional; needed only for email)
+MAIL_FROM                  = <sender email> (optional)
 APP_ALLOWED_ORIGINS        = https://experience-frontend-ivory.vercel.app
-UPLOAD_DIR                 = /var/data/experience-letters   (only if a persistent disk is mounted at /var/data)
+FILE_STORAGE_DIR           = /var/data/experience-letters (only when a persistent disk is mounted)
 
-Create employee_master in defaultdb using database/schema.sql (skip the CREATE DATABASE / USE lines).
+After deploy, open https://<your-render-service>.onrender.com/api/health.
+It must return status UP and database connected. If database is unavailable, fix the
+SPRING_DATASOURCE_* values before testing employee lookup.
+
+Create employee_master using database/schema.sql in the SAME database named in
+SPRING_DATASOURCE_URL. Import actual employee records from the authoritative HR export.
+Do not use sample or placeholder details. Verify UXII0022 using the SELECT statements
+in database/schema.sql. The employee lookup also checks previous records in
+experience_sends, case-insensitively and ignoring surrounding spaces.

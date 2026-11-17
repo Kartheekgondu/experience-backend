@@ -7,7 +7,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.Optional;
 
 public interface EmployeeRepository extends JpaRepository<Employee, String> {
-    // Match IDs regardless of case or accidental leading/trailing spaces in legacy rows.
+    // Handles legacy IDs stored with different casing or accidental surrounding spaces.
     @Query("select e from Employee e where upper(trim(e.employeeId)) = upper(trim(:employeeId))")
-    Optional<Employee> findByNormalizedEmployeeId(@Param("employeeId") String employeeId);
+    Optional<Employee> findByEmployeeIdNormalized(@Param("employeeId") String employeeId);
 }

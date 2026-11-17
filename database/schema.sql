@@ -11,35 +11,22 @@ CREATE TABLE IF NOT EXISTS employee_master (
   email VARCHAR(190)
 );
 
--- Insert one row per employee using your real employee information.
--- The frontend now asks only for employee_id. All other details are fetched
--- from this table. Do not use the sample values as real employee data.
+-- Import the REAL values for previous employees from your authoritative HR/Supabase
+-- export. Do not insert placeholder values. Example structure only:
 -- INSERT INTO employee_master
 -- (employee_id, full_name, designation, join_date, last_working_date, email)
--- VALUES ('UXII0022', 'G Kartheek', 'Software Engineer',
---         '2026-07-01', '2026-11-15', 'employee@example.com');
+-- VALUES ('UXII0022', '<actual full name>', '<actual designation>',
+--         '<YYYY-MM-DD joining date>', '<YYYY-MM-DD last working date>', '<actual email>');
 
--- Spring Boot creates/updates experience_sends automatically through JPA.
-
-
--- IMPORTANT: employee lookup reads only employee_master and experience_sends.
--- If UXII0022 exists in a legacy database/table, migrate its REAL values into
--- employee_master (do not insert placeholder/sample values). Example:
--- INSERT INTO employee_master
---   (employee_id, full_name, designation, join_date, last_working_date, email)
--- VALUES
---   ('UXII0022', '<real full name>', '<real designation>',
---    '<YYYY-MM-DD joining date>', '<YYYY-MM-DD last working date>', '<real email>')
--- ON DUPLICATE KEY UPDATE
---   full_name=VALUES(full_name), designation=VALUES(designation),
---   join_date=VALUES(join_date), last_working_date=VALUES(last_working_date),
---   email=VALUES(email);
-
--- Run this against the SAME database configured in Render to verify the row:
+-- Verify the production record after importing:
 -- SELECT employee_id, full_name, designation, join_date, last_working_date, email
--- FROM employee_master WHERE UPPER(TRIM(employee_id)) = 'UXII0022';
+-- FROM employee_master
+-- WHERE UPPER(TRIM(employee_id)) = 'UXII0022';
+-- Also check historical letter records:
 -- SELECT employee_id, employee_name, designation, date_of_joining,
 --        last_working_date, recipient_email, created_at
 -- FROM experience_sends
 -- WHERE UPPER(TRIM(employee_id)) = 'UXII0022'
 -- ORDER BY created_at DESC;
+
+-- Spring Boot creates/updates experience_sends automatically through JPA.

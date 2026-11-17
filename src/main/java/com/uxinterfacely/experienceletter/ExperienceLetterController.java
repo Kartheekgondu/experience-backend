@@ -33,7 +33,22 @@ public class ExperienceLetterController {
     }
 
     @GetMapping("/health")
-    public Map<String,Object> health() { return Map.of("status","UP","service","experience-letter-api","database","mysql"); }
+    public ResponseEntity<Map<String,Object>> health() {
+        Map<String,Object> result = new LinkedHashMap<>();
+        result.put("service", "experience-letter-api");
+        try {
+            result.put("database", "connected");
+            result.put("employeeRecords", employees.count());
+            result.put("letterRecords", history.count());
+            result.put("status", "UP");
+            return ResponseEntity.ok(result);
+        } catch (Exception ex) {
+            result.put("database", "unavailable");
+            result.put("status", "DEGRADED");
+            result.put("error", safeMessage(ex));
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(result);
+        }
+    }
 
     private String validate(String name, String id, String designation, String doj, String lwd, String email, boolean required) {
         if (name == null || !name.matches("[A-Za-z]+(?: [A-Za-z]+)*") || name.length()<2 || name.length()>60) return "Invalid employee name";
@@ -100,13 +115,13 @@ public class ExperienceLetterController {
 
         // Read both sources. employee_master may contain an older/incomplete row,
         // while experience_sends stores the details used for previous letters.
-        Optional<Employee> master = employees.findByNormalizedEmployeeId(id);
+        Optional<Employee> master = employees.findByEmployeeIdNormalized(id);
         List<ExperienceSend> previousLetters = history.findLatestMatchingEmployeeId(id);
         ExperienceSend latest = previousLetters.isEmpty() ? null : previousLetters.get(0);
 
         if (master.isEmpty() && latest == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", "No employee or previous letter found for Employee ID " + id));
+                    .body(Map.of("error", "Employee ID " + id + " was not found in the connected production database. Import this employee into employee_master or migrate a previous record into experience_sends."));
         }
 
         Map<String, Object> result = new LinkedHashMap<>();
