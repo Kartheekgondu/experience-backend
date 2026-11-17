@@ -1,0 +1,11 @@
+Set these in Render > Environment (never commit real values):
+
+SPRING_DATASOURCE_URL      = jdbc:mysql://<aiven-host>:11124/defaultdb?sslMode=REQUIRED
+SPRING_DATASOURCE_USERNAME = avnadmin
+SPRING_DATASOURCE_PASSWORD = <new Aiven password>
+MAIL_USERNAME              = <gmail address>
+MAIL_PASSWORD              = <new gmail app password>
+APP_ALLOWED_ORIGINS        = https://experience-frontend-ivory.vercel.app
+UPLOAD_DIR                 = /var/data/experience-letters   (only if a persistent disk is mounted at /var/data)
+
+Create employee_master in defaultdb using database/schema.sql (skip the CREATE DATABASE / USE lines).
