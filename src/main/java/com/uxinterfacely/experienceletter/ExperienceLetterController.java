@@ -94,17 +94,44 @@ public class ExperienceLetterController {
     @GetMapping("/employee/{employeeId}")
     public ResponseEntity<?> employee(@PathVariable String employeeId) {
         String id = employeeId == null ? "" : employeeId.trim().toUpperCase(Locale.ROOT);
-        // First use the employee master table. For employees already processed by
-        // this application, fall back to the latest saved/sent letter history.
-        Optional<Employee> master = employees.findById(id);
-        if (master.isPresent()) {
-            return ResponseEntity.ok(employeeMap(master.get()));
+        if (id.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Employee ID is required"));
         }
 
-        return history.findByEmployeeIdOrderByCreatedAtDesc(id).stream()
-                .findFirst()
-                .<ResponseEntity<?>>map(row -> ResponseEntity.ok(historyEmployeeMap(row)))
-                .orElseGet(() -> ResponseEntity.notFound().build());
+        // Read both sources. employee_master may contain an older/incomplete row,
+        // while experience_sends stores the details used for previous letters.
+        Optional<Employee> master = employees.findById(id);
+        List<ExperienceSend> previousLetters = history.findLatestMatchingEmployeeId(id);
+        ExperienceSend latest = previousLetters.isEmpty() ? null : previousLetters.get(0);
+
+        if (master.isEmpty() && latest == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "No employee or previous letter found for Employee ID " + id));
+        }
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        Employee employee = master.orElse(null);
+
+        result.put("full_name", firstNonBlank(employee == null ? null : employee.getFullName(),
+                latest == null ? null : latest.getEmployeeName()));
+        result.put("designation", firstNonBlank(employee == null ? null : employee.getDesignation(),
+                latest == null ? null : latest.getDesignation()));
+        result.put("join_date", firstNonBlank(employee == null || employee.getJoinDate() == null ? null : employee.getJoinDate().toString(),
+                latest == null ? null : latest.getDateOfJoining()));
+        result.put("last_working_date", firstNonBlank(employee == null || employee.getLastWorkingDate() == null ? null : employee.getLastWorkingDate().toString(),
+                latest == null ? null : latest.getLastWorkingDate()));
+        result.put("email", firstNonBlank(employee == null ? null : employee.getEmail(),
+                latest == null ? null : latest.getRecipientEmail()));
+        result.put("source", employee != null && latest != null ? "employee_master+experience_sends"
+                : employee != null ? "employee_master" : "experience_sends");
+
+        return ResponseEntity.ok(result);
+    }
+
+    private String firstNonBlank(String primary, String fallback) {
+        if (primary != null && !primary.isBlank()) return primary.trim();
+        if (fallback != null && !fallback.isBlank()) return fallback.trim();
+        return "";
     }
 
     private Map<String,Object> historyEmployeeMap(ExperienceSend row) {
@@ -126,7 +153,7 @@ public class ExperienceLetterController {
 
     @GetMapping("/experience-history/{employeeId}")
     public List<Map<String,Object>> history(@PathVariable String employeeId) {
-        return history.findByEmployeeIdOrderByCreatedAtDesc(employeeId).stream().map(e -> {
+        return history.findLatestMatchingEmployeeId(employeeId == null ? "" : employeeId.trim()).stream().map(e -> {
             Map<String,Object> m=new LinkedHashMap<>();
             m.put("id",e.getId()); m.put("employee_name",e.getEmployeeName()); m.put("employee_id",e.getEmployeeId());
             m.put("designation",e.getDesignation()); m.put("recipient_email",e.getRecipientEmail());
